@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบติดตามค่าไฟฟ้า</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#060c1a;--panel:#0b1628;--border:#1a3055;--accent:#00d4ff;--accent2:#ff6b2b;--accent3:#00ff9d;--text:#c8dff5;--muted:#4a6a8a;--warn:#ffcc00;--danger:#ff3b3b;--purple:#a855f7;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.025) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;padding:18px;max-width:1440px;margin:0 auto;}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:18px 24px;background:var(--panel);border:1px solid var(--border);border-bottom:2px solid var(--accent);border-radius:14px;margin-bottom:20px;box-shadow:0 0 20px rgba(0,212,255,.2),inset 0 1px 0 rgba(255,255,255,.04);}
+.h1{font-family:'Orbitron',monospace;font-size:1.25rem;font-weight:900;color:var(--accent);letter-spacing:2px;text-shadow:0 0 24px rgba(0,212,255,.5);}
+.hsub{font-size:.8rem;color:var(--muted);margin-top:3px;}
+.hright{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.pill{display:flex;align-items:center;gap:7px;padding:6px 14px;background:rgba(0,255,157,.07);border:1px solid rgba(0,255,157,.25);border-radius:100px;font-size:.78rem;color:var(--accent3);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent3);box-shadow:0 0 8px var(--accent3);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+#lu{font-family:'Orbitron',monospace;font-size:.72rem;color:var(--muted);letter-spacing:1px;}
+.rbtn{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.35);color:var(--accent);padding:7px 16px;border-radius:8px;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:.82rem;transition:all .25s;letter-spacing:.5px;display:flex;align-items:center;gap:6px;}
+.rbtn:hover{background:rgba(0,212,255,.18);box-shadow:0 0 16px rgba(0,212,255,.25);}
+.rbtn:disabled{opacity:.5;cursor:not-allowed;}
+.spin{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
+.kcard{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s;animation:fadeUp .45s ease both;}
+.kcard:hover{transform:translateY(-3px);}
+.kcard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.c1::after{background:var(--accent);box-shadow:0 0 10px var(--accent);}
+.c2::after{background:var(--accent2);box-shadow:0 0 10px var(--accent2);}
+.c3::after{background:var(--accent3);box-shadow:0 0 10px var(--accent3);}
+.c4::after{background:var(--warn);box-shadow:0 0 10px var(--warn);}
+.c5::after{background:var(--purple);box-shadow:0 0 10px var(--purple);}
+.kcard:hover.c1{box-shadow:0 0 18px rgba(0,212,255,.25);}
+.kcard:hover.c2{box-shadow:0 0 18px rgba(255,107,43,.25);}
+.kico{position:absolute;right:14px;top:14px;font-size:2.2rem;opacity:.1;}
+.klbl{font-size:.72rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.kval{font-family:'Orbitron',monospace;font-size:1.7rem;font-weight:700;line-height:1;}
+.kval.c1{color:var(--accent);text-shadow:0 0 16px rgba(0,212,255,.4);}
+.kval.c2{color:var(--accent2);text-shadow:0 0 16px rgba(255,107,43,.4);}
+.kval.c3{color:var(--accent3);text-shadow:0 0 16px rgba(0,255,157,.4);}
+.kval.c4{color:var(--warn);text-shadow:0 0 16px rgba(255,204,0,.4);}
+.kval.c5{color:var(--purple);text-shadow:0 0 16px rgba(168,85,247,.4);}
+.kunit{font-size:.72rem;color:var(--muted);margin-top:5px;}
+.ksub{font-size:.74rem;color:var(--muted);margin-top:3px;}
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;animation:fadeUp .45s ease both;}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.ptitle{font-size:.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text);display:flex;align-items:center;gap:8px;}
+.ptitle::before{content:'';width:3px;height:15px;background:var(--accent);border-radius:2px;box-shadow:0 0 8px var(--accent);}
+.cw240{position:relative;height:240px;}
+.cw200{position:relative;height:200px;}
+.bklist{display:flex;flex-direction:column;gap:10px;}
+.bkrow{display:flex;align-items:center;gap:10px;}
+.bklbl{font-size:.78rem;color:var(--muted);width:155px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bkwrap{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
+.bkbar{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.22,1,.36,1);}
+.bkval{font-family:'Orbitron',monospace;font-size:.72rem;width:75px;text-align:right;flex-shrink:0;}
+.tdiv{border-top:1px solid var(--border);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center;}
+.ttwrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.82rem;}
+thead th{text-align:left;padding:9px 12px;color:var(--muted);font-size:.7rem;letter-spacing:1.2px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(26,48,85,.4);transition:background .15s;}
+tbody tr:hover{background:rgba(0,212,255,.03);}
+tbody td{padding:9px 12px;white-space:nowrap;}
+.badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:.7rem;font-weight:600;}
+.bbill{background:rgba(0,255,157,.1);color:var(--accent3);border:1px solid rgba(0,255,157,.25);}
+.bmid{background:rgba(0,212,255,.08);color:var(--accent);border:1px solid rgba(0,212,255,.2);}
+.num{font-family:'Orbitron',monospace;font-size:.78rem;}
+.loading{text-align:center;padding:40px;color:var(--muted);}
+.loader{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;}
+.err{text-align:center;padding:28px;color:var(--danger);font-size:.85rem;line-height:1.6;}
+@media(max-width:900px){.row2,.row3{grid-template-columns:1fr;}.kgrid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.kval{font-size:1.3rem;}.bklbl{width:100px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="h1">⚡ ELECTRICITY MONITOR</div>
+    <div class="hsub">ระบบติดตามค่าไฟฟ้าแบบเรียลไทม์ · อัปเดตอัตโนมัติทุก 60 วินาที</div>
+  </div>
+  <div class="hright">
+    <div class="pill"><div class="dot"></div><span id="st">กำลังโหลด...</span></div>
+    <span id="lu">--:--:--</span>
+    <button class="rbtn" id="rbtn" onclick="fetchData()">
+      <svg id="ri" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.96"></path></svg>
+      รีเฟรช
+    </button>
+  </div>
+</header>
+
+<div class="kgrid">
+  <div class="kcard c1" style="animation-delay:.05s"><div class="kico">📏</div><div class="klbl">หน่วยสะสมปัจจุบัน</div><div class="kval c1" id="k1">--</div><div class="kunit">หน่วย (kWh)</div></div>
+  <div class="kcard c2" style="animation-delay:.1s"><div class="kico">💸</div><div class="klbl">ค่าไฟรอบล่าสุด</div><div class="kval c2" id="k2">--</div><div class="kunit">บาท (รวม VAT)</div><div class="ksub" id="k2s"></div></div>
+  <div class="kcard c3" style="animation-delay:.15s"><div class="kico">⚡</div><div class="klbl">หน่วยใช้รอบล่าสุด</div><div class="kval c3" id="k3">--</div><div class="kunit">หน่วย (kWh)</div><div class="ksub" id="k3s"></div></div>
+  <div class="kcard c4" style="animation-delay:.2s"><div class="kico">📊</div><div class="klbl">ค่าเฉลี่ยต่อหน่วย</div><div class="kval c4" id="k4">--</div><div class="kunit">บาท/kWh (รวมทุกรายการ)</div></div>
+  <div class="kcard c5" style="animation-delay:.25s"><div class="kico">🗓️</div><div class="klbl">ค่าไฟสะสมทั้งหมด</div><div class="kval c5" id="k5">--</div><div class="kunit">บาท (รวม VAT ทุกรอบ)</div></div>
+</div>
+
+<div class="row2">
+  <div class="panel" style="animation-delay:.3s">
+    <div class="ph"><div class="ptitle">แนวโน้มค่าไฟและหน่วยใช้</div><div style="font-size:.72rem;color:var(--muted)">คลิก legend เพื่อซ่อน/แสดง</div></div>
+    <div class="cw240"><canvas id="lc"></canvas></div>
+  </div>
+  <div class="panel" style="animation-delay:.35s">
+    <div class="ph"><div class="ptitle">รายละเอียดค่าใช้จ่าย</div><div id="bkp" style="font-size:.72rem;color:var(--muted)">รอบล่าสุด</div></div>
+    <div class="bklist" id="bk"><div class="loading"><div class="loader"></div></div></div>
+  </div>
+</div>
+
+<div class="row3">
+  <div class="panel" style="animation-delay:.4s">
+    <div class="ph"><div class="ptitle">หน่วยใช้แต่ละช่วง (kWh)</div></div>
+    <div class="cw200"><canvas id="bc"></canvas></div>
+  </div>
+  <div class="panel" style="animation-delay:.45s">
+    <div class="ph"><div class="ptitle">สัดส่วนค่าใช้จ่ายสะสม</div></div>
+    <div class="cw200"><canvas id="dc"></canvas></div>
+  </div>
+</div>
+
+<div class="panel" style="animation-delay:.5s">
+  <div class="ph"><div class="ptitle">ประวัติการอ่านมิเตอร์</div><div id="tc" style="font-size:.72rem;color:var(--muted)"></div></div>
+  <div class="ttwrap" id="tw"><div class="loading"><div class="loader"></div><div>กำลังโหลด...</div></div></div>
+</div>
+
+</div>
+
+<script>
+const SHEET_ID='1akSqVcN4n1eiJfunnTRTnYA_xsC_glD6LHkUFeWGOfU';
+let LC,BC,DC;
+Chart.defaults.font.family='Sarabun';Chart.defaults.color='#4a6a8a';
+
+// JSONP แบบ Google Visualization API - ใช้ tqx=out:json&callback=
+// Google จะ wrap response เป็น callback({...}) หรือ google.visualization.Query.setResponse({...})
+// วิธีที่ reliable ที่สุดคือใช้ tqx=out:json แล้วดัก google.visualization.Query.setResponse
+function fetchData(){
+  const btn=document.getElementById('rbtn'),ri=document.getElementById('ri');
+  btn.disabled=true;ri.classList.add('spin');
+  const old=document.getElementById('_gs');if(old)old.remove();
+
+  // Intercept google.visualization.Query.setResponse
+  if(!window.google) window.google={};
+  if(!window.google.visualization) window.google.visualization={};
+  if(!window.google.visualization.Query) window.google.visualization.Query={};
+
+  window.google.visualization.Query.setResponse=function(data){
+    try{
+      if(data.status!=='ok') throw new Error('Sheet status: '+data.status);
+      render(data.table);
+      document.getElementById('st').textContent='ออนไลน์';
+      document.getElementById('lu').textContent=new Date().toLocaleTimeString('th-TH');
+    }catch(e){
+      document.getElementById('st').textContent='ข้อผิดพลาด';
+      document.getElementById('tw').innerHTML='<div class="err">แสดงข้อมูลไม่สำเร็จ<br><small>'+e.message+'</small></div>';
+      console.error(e);
+    }finally{
+      btn.disabled=false;ri.classList.remove('spin');
+      const s=document.getElementById('_gs');if(s)s.remove();
+    }
+  };
+
+  const s=document.createElement('script');s.id='_gs';
+  s.onerror=function(){
+    document.getElementById('st').textContent='โหลดไม่สำเร็จ';
+    document.getElementById('tw').innerHTML='<div class="err">โหลดข้อมูลไม่สำเร็จ<br><small>ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</small></div>';
+    btn.disabled=false;ri.classList.remove('spin');
+  };
+  // tqx=out:json จะ return: google.visualization.Query.setResponse({...})
+  s.src='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&gid=0&t='+Date.now();
+  document.head.appendChild(s);
+}
+
+
+function g(row,i){return row.c&&row.c[i]?row.c[i].v??null:null;}
+function f(row,i){return row.c&&row.c[i]?row.c[i].f??null:null;}
+function n(v){return parseFloat(v)||0;}
+
+function render(tbl){
+  // Filter valid rows: must have datetime(A), meter reading(B), units used(F) > 0
+  const rows=tbl.rows
+    .filter(r=>r.c&&r.c[0]&&r.c[0].v&&r.c[1]&&r.c[1].v&&r.c[5]&&r.c[5].v>0)
+    .map(r=>({
+      dateStr:f(r,0),
+      meter:n(g(r,1)),
+      isBill:g(r,2)===true,
+      days:n(g(r,4)),
+      units:n(g(r,5)),
+      cBase:n(g(r,6)),
+      cSvc:n(g(r,7)),
+      ftRate:n(g(r,8)),
+      cFt:n(g(r,9)),
+      sub:n(g(r,10)),
+      vat:n(g(r,11)),
+      total:n(g(r,12)),
+    }));
+
+  if(!rows.length){document.getElementById('tw').innerHTML='<div class="err">ไม่พบข้อมูลที่ถูกต้อง</div>';return;}
+  const last=rows[rows.length-1];
+  const totalPaid=rows.reduce((s,r)=>s+r.total,0);
+  const avgRate=last.units>0?last.total/last.units:0;
+
+  anim('k1',last.meter,0);anim('k2',last.total,2);anim('k3',last.units,0);anim('k4',avgRate,4);anim('k5',totalPaid,2);
+  document.getElementById('k2s').textContent=last.dateStr?'📅 '+last.dateStr:'';
+  document.getElementById('k3s').textContent=last.days?'ระยะเวลา '+last.days+' วัน':'';
+
+  const lbs=rows.map(r=>sd(r.dateStr));
+  const uArr=rows.map(r=>r.units);
+  const bArr=rows.map(r=>r.total);
+
+  // Line chart
+  const c1=document.getElementById('lc').getContext('2d');
+  const gU=c1.createLinearGradient(0,0,0,240);gU.addColorStop(0,'rgba(0,212,255,.28)');gU.addColorStop(1,'rgba(0,212,255,0)');
+  const gB=c1.createLinearGradient(0,0,0,240);gB.addColorStop(0,'rgba(255,107,43,.28)');gB.addColorStop(1,'rgba(255,107,43,0)');
+  if(LC)LC.destroy();
+  LC=new Chart(c1,{type:'line',data:{labels:lbs,datasets:[
+    {label:'หน่วยใช้ (kWh)',data:uArr,borderColor:'#00d4ff',backgroundColor:gU,borderWidth:2,pointRadius:4,pointBackgroundColor:'#00d4ff',pointBorderColor:'#060c1a',pointBorderWidth:2,tension:.4,fill:true,yAxisID:'y'},
+    {label:'ค่าไฟรวม (บาท)',data:bArr,borderColor:'#ff6b2b',backgroundColor:gB,borderWidth:2,pointRadius:4,pointBackgroundColor:'#ff6b2b',pointBorderColor:'#060c1a',pointBorderWidth:2,tension:.4,fill:true,yAxisID:'y1'}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:'#c8dff5',usePointStyle:true,pointStyleWidth:9,padding:14,font:{size:11}}},
+      tooltip:{backgroundColor:'#0b1628',borderColor:'#1a3055',borderWidth:1,titleColor:'#c8dff5',bodyColor:'#4a6a8a',padding:11,
+        callbacks:{label:c=>c.datasetIndex===0?' หน่วย: '+c.parsed.y.toLocaleString('th-TH')+' kWh':' ค่าไฟ: '+c.parsed.y.toLocaleString('th-TH',{minimumFractionDigits:2})+' บาท'}}},
+    scales:{x:{grid:{color:'rgba(26,48,85,.5)'},ticks:{color:'#4a6a8a',maxRotation:30,font:{size:10}}},
+      y:{position:'left',grid:{color:'rgba(26,48,85,.5)'},ticks:{color:'#00d4ff',font:{size:10}},title:{display:true,text:'kWh',color:'#00d4ff',font:{size:10}}},
+      y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:'#ff6b2b',font:{size:10}},title:{display:true,text:'บาท',color:'#ff6b2b',font:{size:10}}}}}});
+
+  // Bar chart
+  const mx=Math.max(...uArr);
+  const c2=document.getElementById('bc').getContext('2d');
+  if(BC)BC.destroy();
+  BC=new Chart(c2,{type:'bar',data:{labels:lbs,datasets:[{label:'หน่วยใช้ (kWh)',data:uArr,
+    backgroundColor:uArr.map(v=>v/mx>.75?'rgba(255,59,59,.7)':v/mx>.45?'rgba(255,204,0,.7)':'rgba(0,212,255,.7)'),
+    borderColor:uArr.map(v=>v/mx>.75?'#ff3b3b':v/mx>.45?'#ffcc00':'#00d4ff'),
+    borderWidth:1.5,borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{backgroundColor:'#0b1628',borderColor:'#1a3055',borderWidth:1,titleColor:'#c8dff5',bodyColor:'#4a6a8a',
+        callbacks:{label:c=>' '+c.parsed.y.toLocaleString('th-TH')+' kWh'}}},
+      scales:{x:{grid:{color:'rgba(26,48,85,.4)'},ticks:{color:'#4a6a8a',maxRotation:30,font:{size:10}}},
+        y:{grid:{color:'rgba(26,48,85,.5)'},ticks:{color:'#4a6a8a',font:{size:10}}}}}});
+
+  // Donut chart
+  const tB=rows.reduce((s,r)=>s+r.cBase,0),tS=rows.reduce((s,r)=>s+r.cSvc,0),tF=rows.reduce((s,r)=>s+r.cFt,0),tV=rows.reduce((s,r)=>s+r.vat,0);
+  const c3=document.getElementById('dc').getContext('2d');
+  if(DC)DC.destroy();
+  DC=new Chart(c3,{type:'doughnut',data:{labels:['ค่าไฟฟ้า','ค่าบริการ','ค่า FT','VAT 7%'],
+    datasets:[{data:[tB,tS,tF,tV],
+      backgroundColor:['rgba(0,212,255,.75)','rgba(255,107,43,.75)','rgba(255,204,0,.75)','rgba(168,85,247,.75)'],
+      borderColor:['#00d4ff','#ff6b2b','#ffcc00','#a855f7'],borderWidth:1.5,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{color:'#c8dff5',usePointStyle:true,pointStyleWidth:8,padding:10,font:{size:11}}},
+        tooltip:{backgroundColor:'#0b1628',borderColor:'#1a3055',borderWidth:1,titleColor:'#c8dff5',bodyColor:'#4a6a8a',
+          callbacks:{label:c=>' '+c.label+': '+c.parsed.toLocaleString('th-TH',{minimumFractionDigits:2})+' บาท'}}}}});
+
+  // Breakdown bars (last row)
+  document.getElementById('bkp').textContent=last.dateStr||'รอบล่าสุด';
+  const items=[{l:'ค่าไฟฟ้าฐาน',v:last.cBase,c:'#00d4ff'},{l:'ค่าบริการรายเดือน',v:last.cSvc,c:'#ff6b2b'},{l:'ค่า FT',v:last.cFt,c:'#ffcc00'},{l:'VAT 7%',v:last.vat,c:'#a855f7'}];
+  document.getElementById('bk').innerHTML=items.map(it=>`
+    <div class="bkrow"><div class="bklbl">${it.l}</div>
+    <div class="bkwrap"><div class="bkbar" style="width:${last.total>0?it.v/last.total*100:0}%;background:${it.c};box-shadow:0 0 6px ${it.c}66"></div></div>
+    <div class="bkval" style="color:${it.c}">${it.v.toLocaleString('th-TH',{minimumFractionDigits:2})}</div></div>`).join('')
+    +`<div class="tdiv"><span style="font-size:.78rem;color:var(--muted)">รวมทั้งสิ้น</span><span style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--accent2);text-shadow:0 0 12px rgba(255,107,43,.4)">${last.total.toLocaleString('th-TH',{minimumFractionDigits:2})} บาท</span></div>`;
+
+  // Table
+  document.getElementById('tc').textContent=rows.length+' รายการ';
+  const mt=Math.max(...rows.map(r=>r.total));
+  let h='<table><thead><tr><th>#</th><th>วันที่อ่าน</th><th>หน่วยสะสม</th><th>หน่วยใช้</th><th>วัน</th><th>ค่าไฟฐาน</th><th>ค่า FT</th><th>VAT</th><th>รวมทั้งสิ้น</th><th>ประเภท</th></tr></thead><tbody>';
+  rows.slice().reverse().forEach((r,i)=>{
+    const rt=mt>0?r.total/mt:0;
+    const col=rt>.75?'var(--danger)':rt>.45?'var(--warn)':'var(--accent3)';
+    h+=`<tr><td style="color:var(--muted);font-size:.78rem">${rows.length-i}</td>
+    <td style="color:var(--muted);font-size:.78rem">${r.dateStr||'-'}</td>
+    <td class="num" style="color:var(--accent)">${r.meter.toLocaleString('th-TH')}</td>
+    <td class="num" style="color:${col}">${r.units.toLocaleString('th-TH')}</td>
+    <td style="color:var(--muted)">${r.days||'-'}</td>
+    <td class="num">${r.cBase.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+    <td class="num" style="color:var(--muted)">${r.cFt.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+    <td class="num" style="color:var(--muted)">${r.vat.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+    <td class="num" style="color:var(--accent2);font-size:.85rem">${r.total.toLocaleString('th-TH',{minimumFractionDigits:2})}</td>
+    <td><span class="badge ${r.isBill?'bbill':'bmid'}">${r.isBill?'สิ้นรอบ':'กลางรอบ'}</span></td></tr>`;
+  });
+  h+='</tbody></table>';
+  document.getElementById('tw').innerHTML=h;
+}
+
+function sd(s){if(!s)return'-';const m=s.match(/(\d+)\/(\d+)\/(\d{4})/);return m?m[1].padStart(2,'0')+'/'+m[2].padStart(2,'0')+'/'+m[3].slice(2):s;}
+
+function anim(id,target,dec){
+  const el=document.getElementById(id),t0=performance.now(),dur=900;
+  (function step(now){const p=Math.min((now-t0)/dur,1),e=1-Math.pow(1-p,3);
+    el.textContent=(target*e).toLocaleString('th-TH',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+    if(p<1)requestAnimationFrame(step);})(t0);
+}
+
+fetchData();
+setInterval(fetchData,60000);
+
+</script>
+</body>
+</html>
